@@ -4,7 +4,6 @@ import gym
 import pytest
 
 from garage.envs import GarageEnv
-from garage.envs.bullet import _get_unsupported_env_list
 
 from tests.helpers import step_env_with_gym_quirks
 
@@ -22,8 +21,6 @@ class TestGarageEnv:
         if spec._env_name.startswith('Defender'):
             pytest.skip(
                 'Defender-* envs bundled in atari-py 0.2.x don\'t load')
-        if any(name == spec.id for name in _get_unsupported_env_list()):
-            pytest.skip('Skip unsupported Bullet environments')
         env = GarageEnv(spec.make())
         step_env_with_gym_quirks(env, spec)
 
@@ -33,8 +30,6 @@ class TestGarageEnv:
         if spec._env_name.startswith('Defender'):
             pytest.skip(
                 'Defender-* envs bundled in atari-py 0.2.x don\'t load')
-        if any(name == spec.id for name in _get_unsupported_env_list()):
-            pytest.skip('Skip unsupported Bullet environments')
         env = GarageEnv(env_name=spec.id)
         step_env_with_gym_quirks(env,
                                  spec,

@@ -148,7 +148,10 @@ class BulletEnv(gym.Wrapper):
                 param_names.remove('robot')
 
         # Create param name -> param value mapping for the wrapped environment
-        args = {key: env.__dict__['_' + key] for key in param_names}
+        args = {
+            key: env.__dict__['_' + key]
+            for key in param_names if '_' + key in env.__dict__
+        }
 
         # Only one local in-process GUI connection is allowed. Thus pickled
         # BulletEnv shouldn't enable rendering. New BulletEnv will connect in
@@ -161,6 +164,11 @@ class BulletEnv(gym.Wrapper):
         # env id is saved to help gym.make() in __setstate__
         args['id'] = env.spec.id
         args['env_name'] = self._env_name
+
+        if 'args' in args:
+            del args['args']
+        if 'kwargs' in args:
+            del args['kwargs']
 
         return args
 
