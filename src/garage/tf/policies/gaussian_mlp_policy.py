@@ -8,6 +8,7 @@ import akro
 import numpy as np
 import tensorflow as tf
 
+from garage import convert_n_to_numpy, convert_to_numpy
 from garage.experiment import deterministic
 from garage.tf.models import GaussianMLPModel
 from garage.tf.policies.policy import Policy
@@ -182,6 +183,7 @@ class GaussianMLPPolicy(GaussianMLPModel, Policy):
                 distribution.
 
         """
+        observation = convert_to_numpy(self.observation_space, observation)
         sample, mean, log_std = self._f_dist(np.expand_dims([observation], 1))
         sample = self.action_space.unflatten(np.squeeze(sample, 1)[0])
         mean = self.action_space.unflatten(np.squeeze(mean, 1)[0])
@@ -205,6 +207,7 @@ class GaussianMLPPolicy(GaussianMLPModel, Policy):
                 distribution.
 
         """
+        observations = convert_n_to_numpy(self.observation_space, observations)
         samples, means, log_stds = self._f_dist(np.expand_dims(
             observations, 1))
         samples = self.action_space.unflatten_n(np.squeeze(samples, 1))

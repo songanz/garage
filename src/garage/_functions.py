@@ -163,3 +163,43 @@ def log_performance(itr, batch, discount, prefix='Evaluation'):
             tabular.record('SuccessRate', np.mean(success))
 
     return undiscounted_returns
+
+
+def convert_to_numpy(observation_space, observation):
+    """Flattens observation to a numpy.ndarray if it is not.
+
+    Args:
+        observation_space(akro.Space): The observation space that
+            observation comes from.
+        observation(observation_space.dtype): The observations to be flattened
+            if necessary.
+
+    Returns:
+        np.ndarray: Flattened observations.
+    """
+    if not isinstance(observation, np.ndarray):
+        observation = (observation_space.flatten(observation))
+    return observation
+
+
+def convert_n_to_numpy(observation_space, observations):
+    """Flattens a batch of observations to a numpy.ndarray if it is not.
+
+    Args:
+        observation_space(akro.Space): The observation space that
+            observations comes from.
+        observations(observation_space.dtype): The observations to be flattened
+            if necessary.
+
+    Returns:
+        np.ndarray: Flattened observations.
+    """
+    # if a list of observations is passed, then
+    # don't flatten them if the individual observations
+    # are numpy arrays
+    if isinstance(observations, list):
+        if isinstance(observations[0], np.ndarray):
+            return observations
+    if not isinstance(observations, np.ndarray):
+        observations = (observation_space.flatten_n(observations))
+    return observations

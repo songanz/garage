@@ -4,6 +4,7 @@ import akro
 import numpy as np
 import tensorflow as tf
 
+from garage import convert_n_to_numpy, convert_to_numpy
 from garage.experiment import deterministic
 from garage.tf.models import GaussianMLPModel
 from garage.tf.policies.task_embedding_policy import TaskEmbeddingPolicy
@@ -232,6 +233,7 @@ class GaussianMLPTaskEmbeddingPolicy(GaussianMLPModel, TaskEmbeddingPolicy):
                     A is the dimension of action.
 
         """
+        observation = convert_to_numpy(self.observation_space, observation)
         obs, task = self.split_augmented_observation(observation)
         return self.get_action_given_task(obs, task)
 
@@ -257,6 +259,7 @@ class GaussianMLPTaskEmbeddingPolicy(GaussianMLPModel, TaskEmbeddingPolicy):
                     environment steps, Z is the dimension of action.
 
         """
+        observations = convert_n_to_numpy(self.observation_space, observations)
         obses, tasks = zip(*[
             self.split_augmented_observation(aug_obs)
             for aug_obs in observations

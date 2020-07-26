@@ -8,6 +8,7 @@ import akro
 import numpy as np
 import tensorflow as tf
 
+from garage import convert_n_to_numpy, convert_to_numpy
 from garage.experiment import deterministic
 from garage.tf.models import GaussianGRUModel
 from garage.tf.policies.policy import Policy
@@ -235,6 +236,7 @@ class GaussianGRUPolicy(GaussianGRUModel, Policy):
                 self._state_include_action is True.
 
         """
+        observation = convert_to_numpy(self.observation_space, observation)
         actions, agent_infos = self.get_actions([observation])
         return actions[0], {k: v[0] for k, v in agent_infos.items()}
 
@@ -257,6 +259,7 @@ class GaussianGRUPolicy(GaussianGRUModel, Policy):
                 self._state_include_action is True.
 
         """
+        observations = convert_n_to_numpy(self.observation_space, observations)
         if self._state_include_action:
             assert self._prev_actions is not None
             all_input = np.concatenate([observations, self._prev_actions],
