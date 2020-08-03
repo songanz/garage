@@ -29,6 +29,7 @@ class MAML:
             computing loss.
         env (garage.envs.GarageEnv): A gym environment.
         policy (garage.torch.policies.Policy): Policy.
+        task_sampler (garage.experiment.TaskSampler): Task sampler.
         meta_optimizer (Union[torch.optim.Optimizer, tuple]):
             Type of optimizer.
             This can be an optimizer type such as `torch.optim.Adam` or a tuple
@@ -48,6 +49,7 @@ class MAML:
                  inner_algo,
                  env,
                  policy,
+                 task_sampler,
                  meta_optimizer,
                  meta_batch_size=40,
                  inner_lr=0.1,
@@ -62,6 +64,7 @@ class MAML:
         self._meta_evaluator = meta_evaluator
         self._policy = policy
         self._env = env
+        self._task_sampler = task_sampler
         self._value_function = copy.deepcopy(inner_algo._value_function)
         self._initial_vf_state = self._value_function.state_dict()
         self._num_grad_updates = num_grad_updates
@@ -192,15 +195,14 @@ class MAML:
                     dictionaries.
 
         """
-        tasks = self._env.sample_tasks(self._meta_batch_size)
+        tasks = self._task_sampler.sample(self._meta_batch_size)
         all_samples = [[] for _ in range(len(tasks))]
         all_params = []
         theta = dict(self._policy.named_parameters())
 
-        for i, task in enumerate(tasks):
+        for i, env_up in enumerate(tasks):
 
             for j in range(self._num_grad_updates + 1):
-                env_up = SetTaskUpdate(None, task=task)
                 paths = runner.obtain_samples(runner.step_itr,
                                               env_update=env_up)
                 batch_samples = self._process_samples(paths)

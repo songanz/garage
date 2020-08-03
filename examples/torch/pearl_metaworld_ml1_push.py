@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """PEARL ML1 example."""
 import click
-import metaworld.benchmarks as mwb
+import metaworld
 
 from garage import wrap_experiment
 from garage.envs import GarageEnv, normalize
-from garage.experiment import LocalRunner
+from garage.experiment import LocalRunner, MetaWorldTaskSampler
 from garage.experiment.deterministic import set_seed
 from garage.experiment.task_sampler import SetTaskSampler
 from garage.sampler import LocalSampler
@@ -92,22 +92,20 @@ def pearl_metaworld_ml1_push(ctxt=None,
     set_seed(seed)
     encoder_hidden_sizes = (encoder_hidden_size, encoder_hidden_size,
                             encoder_hidden_size)
-    # create multi-task environment and sample tasks
-    env_sampler = SetTaskSampler(lambda: GarageEnv(
-        normalize(mwb.ML1.get_train_tasks('push-v1'))))
-    env = env_sampler.sample(num_train_tasks)
-
-    test_env_sampler = SetTaskSampler(lambda: GarageEnv(
-        normalize(mwb.ML1.get_test_tasks('push-v1'))))
+    ml1 = metaworld.ML1('push-v1')
+    env_sampler = MetaWorldTaskSampler(ml1, 'train')
+    env = env_sampler.sample(1)[0]()
+    test_env_sampler = MetaWorldTaskSampler(ml1, 'test')
+    env_spec = env.spec
 
     runner = LocalRunner(ctxt)
 
     # instantiate networks
-    augmented_env = PEARL.augment_env_spec(env[0](), latent_size)
+    augmented_env = PEARL.augment_env_spec(env, latent_size)
     qf = ContinuousMLPQFunction(env_spec=augmented_env,
                                 hidden_sizes=[net_size, net_size, net_size])
 
-    vf_env = PEARL.get_env_spec(env[0](), latent_size, 'vf')
+    vf_env = PEARL.get_env_spec(env, latent_size, 'vf')
     vf = ContinuousMLPQFunction(env_spec=vf_env,
                                 hidden_sizes=[net_size, net_size, net_size])
 
@@ -115,7 +113,8 @@ def pearl_metaworld_ml1_push(ctxt=None,
         env_spec=augmented_env, hidden_sizes=[net_size, net_size, net_size])
 
     pearl = PEARL(
-        env=env,
+        env_spec=env_spec,
+        task_sampler=env_sampler,
         policy_class=ContextConditionedPolicy,
         encoder_class=MLPEncoder,
         inner_policy=inner_policy,
@@ -144,7 +143,7 @@ def pearl_metaworld_ml1_push(ctxt=None,
         pearl.to()
 
     runner.setup(algo=pearl,
-                 env=env[0](),
+                 env=env,
                  sampler_cls=LocalSampler,
                  sampler_args=dict(max_path_length=max_path_length),
                  n_workers=1,

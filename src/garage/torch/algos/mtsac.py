@@ -181,11 +181,11 @@ class MTSAC(SAC):
 
         """
         eval_trajs = []
-        for _ in range(self._num_tasks):
+        for eval_env in self._eval_envs:
             eval_trajs.append(
                 obtain_evaluation_samples(
                     self.policy,
-                    self._eval_env,
+                    eval_env,
                     num_trajs=self._num_evaluation_trajectories))
         eval_trajs = TrajectoryBatch.concatenate(*eval_trajs)
         last_return = log_multitask_performance(epoch, eval_trajs,

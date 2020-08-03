@@ -6,6 +6,7 @@ Code is adapted from https://github.com/katerakelly/oyster.
 import copy
 
 import akro
+import click
 from dowel import logger
 import numpy as np
 import torch
@@ -32,9 +33,8 @@ class PEARL(MetaRLAlgorithm):
     behavior to specific tasks.
 
     Args:
-        env (list[GarageEnv]): Batch of sampled environment updates(EnvUpdate),
-            which, when invoked on environments, will configure them with new
-            tasks.
+        env_spec (garage.envs.EnvSpec): Environment specs to be augmented.
+        task_sampler (garage.experiment.TaskSampler): Task sampler.
         policy_class (garage.torch.policies.Policy): Context-conditioned policy
             class.
         encoder_class (garage.torch.embeddings.ContextEncoder): Encoder class
@@ -93,7 +93,8 @@ class PEARL(MetaRLAlgorithm):
 
     # pylint: disable=too-many-statements
     def __init__(self,
-                 env,
+                 env_spec,
+                 task_sampler,
                  inner_policy,
                  qf,
                  vf,
@@ -132,12 +133,11 @@ class PEARL(MetaRLAlgorithm):
                  reward_scale=1,
                  update_post_train=1):
 
-        self._env = env
+        self._env_spec = env_spec
         self._qf1 = qf
         self._qf2 = copy.deepcopy(qf)
         self._vf = vf
         self._num_train_tasks = num_train_tasks
-        self._num_test_tasks = num_test_tasks
         self._latent_dim = latent_dim
 
         self._policy_mean_reg_coeff = policy_mean_reg_coeff
@@ -164,6 +164,7 @@ class PEARL(MetaRLAlgorithm):
         self._reward_scale = reward_scale
         self._update_post_train = update_post_train
         self._task_idx = None
+        self._train_tasks = task_sampler.sample(num_train_tasks)
 
         self._is_resuming = False
 
@@ -174,7 +175,7 @@ class PEARL(MetaRLAlgorithm):
                                         worker_args=worker_args,
                                         n_test_tasks=num_test_tasks)
 
-        encoder_spec = self.get_env_spec(env[0](), latent_dim, 'encoder')
+        encoder_spec = self.get_env_spec(env_spec, latent_dim, 'encoder')
         encoder_in_dim = int(np.prod(encoder_spec.input_space.shape))
         encoder_out_dim = int(np.prod(encoder_spec.output_space.shape))
         context_encoder = encoder_class(input_dim=encoder_in_dim,
@@ -268,33 +269,38 @@ class PEARL(MetaRLAlgorithm):
 
             # obtain initial set of samples from all train tasks
             if epoch == 0 or self._is_resuming:
-                for idx in range(self._num_train_tasks):
-                    self._task_idx = idx
-                    self._obtain_samples(runner, epoch,
-                                         self._num_initial_steps, np.inf)
-                    self._is_resuming = False
+                with click.progressbar(range(self._num_train_tasks),
+                                       label='Initial Sampling') as pbar:
+                    for idx in pbar:
+                        self._task_idx = idx
+                        self._obtain_samples(runner, epoch,
+                                             self._num_initial_steps, np.inf)
+                        self._is_resuming = False
 
             # obtain samples from random tasks
-            for _ in range(self._num_tasks_sample):
-                idx = np.random.randint(self._num_train_tasks)
-                self._task_idx = idx
-                self._context_replay_buffers[idx].clear()
-                # obtain samples with z ~ prior
-                if self._num_steps_prior > 0:
-                    self._obtain_samples(runner, epoch, self._num_steps_prior,
-                                         np.inf)
-                # obtain samples with z ~ posterior
-                if self._num_steps_posterior > 0:
-                    self._obtain_samples(runner, epoch,
-                                         self._num_steps_posterior,
-                                         self._update_post_train)
-                # obtain extras samples for RL training but not encoder
-                if self._num_extra_rl_steps_posterior > 0:
-                    self._obtain_samples(runner,
-                                         epoch,
-                                         self._num_extra_rl_steps_posterior,
-                                         self._update_post_train,
-                                         add_to_enc_buffer=False)
+
+            with click.progressbar(range(self._num_tasks_sample),
+                                   label='Sampling Tasks') as pbar:
+                for _ in pbar:
+                    idx = np.random.randint(self._num_train_tasks)
+                    self._task_idx = idx
+                    self._context_replay_buffers[idx].clear()
+                    # obtain samples with z ~ prior
+                    if self._num_steps_prior > 0:
+                        self._obtain_samples(runner, epoch,
+                                             self._num_steps_prior, np.inf)
+                    # obtain samples with z ~ posterior
+                    if self._num_steps_posterior > 0:
+                        self._obtain_samples(runner, epoch,
+                                             self._num_steps_posterior,
+                                             self._update_post_train)
+                    # obtain extras samples for RL training but not encoder
+                    if self._num_extra_rl_steps_posterior > 0:
+                        self._obtain_samples(runner,
+                                             epoch,
+                                             self._num_extra_rl_steps_posterior,
+                                             self._update_post_train,
+                                             add_to_enc_buffer=False)
 
             logger.log('Training...')
             # sample train tasks and optimize networks
@@ -427,7 +433,7 @@ class PEARL(MetaRLAlgorithm):
         while total_samples < num_samples:
             paths = runner.obtain_samples(itr, num_samples_per_batch,
                                           self._policy,
-                                          self._env[self._task_idx])
+                                          self._train_tasks[self._task_idx])
             total_samples += sum([len(path['rewards']) for path in paths])
 
             for path in paths:

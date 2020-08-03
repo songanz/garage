@@ -8,6 +8,7 @@ from garage.envs.normalized_env import normalize
 from garage.envs.point_env import PointEnv
 from garage.envs.step import Step
 from garage.envs.task_onehot_wrapper import TaskOnehotWrapper
+from garage.envs.task_name_wrapper import TaskNameWrapper
 
 __all__ = [
     'GarageEnv',
@@ -18,4 +19,5 @@ __all__ = [
     'normalize',
     'PointEnv',
     'TaskOnehotWrapper',
+    'TaskNameWrapper',
 ]

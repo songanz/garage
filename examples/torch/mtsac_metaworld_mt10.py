@@ -4,15 +4,15 @@
 https://arxiv.org/pdf/1910.10897.pdf
 """
 import click
-import metaworld.benchmarks as mwb
+import metaworld
 import numpy as np
 from torch import nn
 from torch.nn import functional as F
 
 from garage import wrap_experiment
-from garage.envs import GarageEnv, MultiEnvWrapper, normalize
-from garage.envs.multi_env_wrapper import round_robin_strategy
+from garage.envs import GarageEnv, TaskOnehotWrapper, normalize
 from garage.experiment import deterministic, LocalRunner
+from garage.experiment.task_sampler import MetaWorldTaskSampler
 from garage.replay_buffer import PathBuffer
 from garage.sampler import LocalSampler
 from garage.torch import set_gpu_mode
@@ -38,21 +38,25 @@ def mtsac_metaworld_mt10(ctxt=None, seed=1, _gpu=None):
     """
     deterministic.set_seed(seed)
     runner = LocalRunner(ctxt)
-    task_names = mwb.MT10.get_train_tasks().all_task_names
-    train_envs = []
-    test_envs = []
-    for task_name in task_names:
-        train_env = normalize(GarageEnv(mwb.MT10.from_task(task_name)),
-                              normalize_reward=True)
-        test_env = normalize(GarageEnv(mwb.MT10.from_task(task_name)))
-        train_envs.append(train_env)
-        test_envs.append(test_env)
-    mt10_train_envs = MultiEnvWrapper(train_envs,
-                                      sample_strategy=round_robin_strategy,
-                                      mode='vanilla')
-    mt10_test_envs = MultiEnvWrapper(test_envs,
-                                     sample_strategy=round_robin_strategy,
-                                     mode='vanilla')
+    mt10 = metaworld.MT10()
+    mt10_test = metaworld.MT10()
+    task_indices = {env_name: index
+                    for (index, env_name)
+                    in enumerate(mt10.train_classes.keys())}
+
+    def wrap(env, task):
+        normalized = normalize(GarageEnv(env), scale_reward=True)
+        with_onehot = TaskOnehotWrapper(normalized,
+                                        task_index=task_indices[task.env_name],
+                                        n_total_tasks=len(task_indices))
+        return with_onehot
+
+    train_task_sampler = MetaWorldTaskSampler(mt10, 'train', wrap)
+    test_task_sampler = MetaWorldTaskSampler(mt10_test, 'train', wrap)
+
+    mt10_train_envs = train_task_sampler.sample(10)
+    mt10_test_envs = test_task_sampler.sample(10)
+
     policy = TanhGaussianMLPPolicy(
         env_spec=mt10_train_envs.spec,
         hidden_sizes=[400, 400, 400],

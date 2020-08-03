@@ -2,10 +2,12 @@
 """Example script to run RL2 in ML10."""
 # pylint: disable=no-value-for-parameter
 import click
-import metaworld.benchmarks as mwb
+import metaworld
 
 from garage import wrap_experiment
-from garage.experiment import LocalTFRunner, task_sampler
+from garage.envs import GarageEnv
+from garage.experiment import LocalTFRunner, MetaWorldTaskSampler, MetaEvaluator
+from garage.experiment import MetaWorldTaskSampler
 from garage.experiment.deterministic import set_seed
 from garage.np.baselines import LinearFeatureBaseline
 from garage.sampler import LocalSampler
@@ -38,14 +40,18 @@ def rl2_ppo_metaworld_ml10(ctxt, seed, max_path_length, meta_batch_size,
     """
     set_seed(seed)
     with LocalTFRunner(snapshot_config=ctxt) as runner:
-        ml10_train_envs = [
-            RL2Env(mwb.ML10.from_task(task_name))
-            for task_name in mwb.ML10.get_train_tasks().all_task_names
-        ]
-        tasks = task_sampler.EnvPoolSampler(ml10_train_envs)
-        tasks.grow_pool(meta_batch_size)
+        ml10 = metaworld.ML10()
+        tasks = MetaWorldTaskSampler(ml10, 'train')
+        test_task_sampler = MetaWorldTaskSampler(ml10, 'test')
+        meta_evaluator = MetaEvaluator(test_task_sampler=test_task_sampler,
+                                       max_path_length=max_path_length,
+                                       n_test_tasks=5,
+                                       n_test_rollouts=10)
 
-        env_spec = ml10_train_envs[0].spec
+        env_updates = tasks.sample(10)
+        env = env_updates[0]()
+
+        env_spec = env.spec
         policy = GaussianGRUPolicy(name='policy',
                                    hidden_dim=64,
                                    env_spec=env_spec,
@@ -70,6 +76,7 @@ def rl2_ppo_metaworld_ml10(ctxt, seed, max_path_length, meta_batch_size,
                       entropy_method='max',
                       policy_ent_coeff=0.02,
                       center_adv=False,
+                      meta_evaluator=meta_evaluator,
                       max_path_length=max_path_length * episode_per_task)
 
         runner.setup(algo,

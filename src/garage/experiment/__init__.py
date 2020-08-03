@@ -7,7 +7,8 @@ from garage.experiment.snapshotter import SnapshotConfig, Snapshotter
 from garage.experiment.task_sampler import (ConstructEnvsSampler,
                                             EnvPoolSampler,
                                             SetTaskSampler,
-                                            TaskSampler)
+                                            TaskSampler,
+                                            MetaWorldTaskSampler)
 
 # yapf: enable
 
@@ -21,4 +22,5 @@ __all__ = [
     'ConstructEnvsSampler',
     'EnvPoolSampler',
     'SetTaskSampler',
+    'MetaWorldTaskSampler',
 ]

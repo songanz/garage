@@ -66,17 +66,37 @@ class SetTaskUpdate(EnvUpdate):
     """`~EnvUpdate` that calls set_task with the provided task.
 
     Args:
-        env_constructor (Callable[gym.Env]): Callable that constructs an
+        env_type (type): Type of
+        Callable that constructs an
             environment.
         task (object): Opaque task type.
+        wrapper_constructor (Callable[garage.Env, garage.Env] or None):
+            Callable that wraps constructed environments.
 
     """
 
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, env_constructor, task):
-        self._env_constructor = env_constructor
+    def __init__(self, env_type, task, wrapper_constructor):
+        if not isinstance(env_type, type):
+            raise ValueError('env_type should be a type, not '
+                             f'{type(env_type)!r}')
+        assert isinstance(env_type, type)
+        self._env_type = env_type
         self._task = task
+        self._wrapper_cons = wrapper_constructor
+
+    def _make_env(self):
+        """Construct the environment, wrapping if necessary.
+
+        Returns:
+            garage.Env: The (possibly wrapped) environment.
+
+        """
+        env = self._env_type()
+        if self._wrapper_cons is not None:
+            env = self._wrapper_cons(env, self._task)
+        return env
 
     def __call__(self, old_env=None):
         """Update an environment.
@@ -90,7 +110,10 @@ class SetTaskUpdate(EnvUpdate):
 
         """
         if old_env is None:
-            old_env = self._env_constructor()
+            old_env = self._make_env()
+        elif not isinstance(old_env.unwrapped, self._env_type):
+            old_env.close()
+            old_env = self._make_env()
         old_env.set_task(self._task)
         return old_env
 

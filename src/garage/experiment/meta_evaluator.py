@@ -79,6 +79,7 @@ class MetaEvaluator:
             test_rollouts_per_task = self._n_test_rollouts
         adapted_trajectories = []
         logger.log('Sampling for adapation and meta-testing...')
+        env_updates = self._test_task_sampler.sample(self._n_test_tasks)
         if self._test_sampler is None:
             self._test_sampler = LocalSampler.from_worker_factory(
                 WorkerFactory(seed=get_seed(),
@@ -87,8 +88,8 @@ class MetaEvaluator:
                               worker_class=self._worker_class,
                               worker_args=self._worker_args),
                 agents=algo.get_exploration_policy(),
-                envs=self._test_task_sampler.sample(1))
-        for env_up in self._test_task_sampler.sample(self._n_test_tasks):
+                envs=env_updates[0])
+        for env_up in env_updates:
             policy = algo.get_exploration_policy()
             traj = TrajectoryBatch.concatenate(*[
                 self._test_sampler.obtain_samples(self._eval_itr, 1, policy,

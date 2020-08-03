@@ -9,6 +9,7 @@ import numpy as np
 from garage.sampler.env_update import (ExistingEnvUpdate,
                                        NewEnvUpdate,
                                        SetTaskUpdate)
+from garage.envs import GarageEnv, TaskNameWrapper
 
 # yapf: enable
 
@@ -225,3 +226,110 @@ class EnvPoolSampler(TaskSampler):
                                   with_replacement=False)
         for idx in to_copy:
             self._envs.append(copy.deepcopy(self._envs[idx]))
+
+
+MT_TASKS_PER_ENV = 50
+
+
+class MetaWorldTaskSampler(TaskSampler):
+    """TaskSampler that distributes a Meta-World benchmark across workers.
+
+    Args:
+        benchmark (metaworld.Benchmark): Benchmark to sample tasks from.
+        kind (str): Must be either 'test' or 'train'. Determines whether to
+            sample training or test tasks from the Benchmark.
+        wrapper (Callable[garage.Env, garage.Env] or None): Wrapper to apply to
+            env instances.
+
+    """
+    def __init__(self, benchmark, kind, wrapper=None):
+        self._benchmark = benchmark
+        self._kind = kind
+        self._inner_wrapper = wrapper
+        if kind == 'train':
+            self._classes = benchmark.train_classes
+            self._tasks = benchmark.train_tasks
+        elif kind == 'test':
+            self._classes = benchmark.test_classes
+            self._tasks = benchmark.test_tasks
+        else:
+            raise ValueError('kind must be either "train" or "test", '
+                             f'not {kind!r}')
+        self._task_map = {env_name: [task
+                                     for task in self._tasks
+                                     if task.env_name == env_name]
+                          for env_name in self._classes.keys()}
+        for tasks in self._task_map.values():
+            assert len(tasks) == MT_TASKS_PER_ENV
+        self._task_orders = {env_name: np.arange(50)
+                             for env_name in self._task_map.keys()}
+        self._next_order_index = 0
+        self._shuffle_tasks()
+
+    def _shuffle_tasks(self):
+        """Reshuffles the task orders."""
+        for tasks in self._task_orders.values():
+            np.random.shuffle(tasks)
+
+    @property
+    def n_tasks(self):
+        """int: the number of tasks."""
+        return len(self._tasks)
+
+    def sample(self, n_tasks, with_replacement=False):
+        """Sample a list of environment updates.
+
+        Note that this will always return environments in the same order, to
+        make parallel sampling across workers efficient. If randomizing the
+        environment order is required, shuffle the result of this method.
+
+        Args:
+            n_tasks (int): Number of updates to sample. Must be a multiple of
+                the number of env classes in the benchmark (e.g. 1 for MT/ML1,
+                10 for MT10, 50 for MT50). Tasks for each environment will be
+                grouped to be adjacent to each other.
+            with_replacement (bool): Whether tasks can repeat when sampled.
+                Since this cannot be easily implemented for an object pool,
+                setting this to True results in ValueError.
+
+        Raises:
+            ValueError: If the number of requested tasks is not equal to the
+                number of classes or the number of total tasks.
+
+        Returns:
+            list[EnvUpdate]: Batch of sampled environment updates, which, when
+                invoked on environments, will configure them with new tasks.
+                See :py:class:`~EnvUpdate` for more information.
+
+        """
+        if n_tasks % len(self._classes) != 0:
+            raise ValueError('For this benchmark, n_tasks must be a multiple '
+                             f'of {len(self._classes)}')
+        tasks_per_class = n_tasks // len(self._classes)
+        updates = []
+
+        # Avoid pickling the entire task sampler into every EnvUpdate
+        inner_wrapper = self._inner_wrapper
+
+        def wrap(env, task):
+            env = GarageEnv(TaskNameWrapper(env, task_name=task.env_name))
+            if inner_wrapper is not None:
+                env = inner_wrapper(env, task)
+            return env
+
+        for env_name, env in self._classes.items():
+            order_index = self._next_order_index
+            for _ in range(tasks_per_class):
+                task_index = self._task_orders[env_name][order_index]
+                task = self._task_map[env_name][task_index]
+                updates.append(SetTaskUpdate(env, task, wrap))
+                if with_replacement:
+                    order_index = np.random.randint(0, MT_TASKS_PER_ENV)
+                else:
+                    order_index += 1
+                    order_index %= MT_TASKS_PER_ENV
+        self._next_order_index += tasks_per_class
+        if self._next_order_index >= MT_TASKS_PER_ENV:
+            self._next_order_index %= MT_TASKS_PER_ENV
+            self._shuffle_tasks()
+        return updates
