@@ -165,3 +165,6 @@ class TestCategoricalLSTMPolicy(TfGraphTestCase):
         policy = CategoricalLSTMPolicy(env_spec=env.spec)
         policy_clone = policy.clone('CategoricalLSTMPolicyClone')
         assert policy.env_spec == policy_clone.env_spec
+        for cloned_param, param in zip(policy_clone.model.parameters.values(),
+                                       policy.model.parameters.values()):
+            assert np.array_equal(cloned_param, param)

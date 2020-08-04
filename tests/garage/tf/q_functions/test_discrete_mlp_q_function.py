@@ -154,3 +154,6 @@ class TestDiscreteMLPQFunction(TfGraphTestCase):
                                       hidden_sizes=hidden_sizes)
         qf_clone = qf.clone('another_qf')
         assert qf_clone._hidden_sizes == qf._hidden_sizes
+        for cloned_param, param in zip(qf_clone.model.parameters.values(),
+                                       qf.model.parameters.values()):
+            assert np.array_equal(cloned_param, param)
