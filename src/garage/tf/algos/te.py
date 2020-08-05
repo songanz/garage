@@ -60,9 +60,9 @@ class TaskEmbeddingWorker(DefaultWorker):
         if self._path_length < self._max_episode_length:
             a, agent_info = self.agent.get_action_given_latent(
                 self._prev_obs, self._z)
-            next_o, r, d, env_info = self.env.step(a)
+            es = self.env.step(a)
             self._observations.append(self._prev_obs)
-            self._rewards.append(r)
+            self._rewards.append(es.reward)
             self._actions.append(a)
             self._tasks.append(self._t)
             self._latents.append(self._z)
@@ -70,17 +70,13 @@ class TaskEmbeddingWorker(DefaultWorker):
                 self._latent_infos[k].append(v)
             for k, v in agent_info.items():
                 self._agent_infos[k].append(v)
-            for k, v in env_info.items():
+            for k, v in es.env_info.items():
                 self._env_infos[k].append(v)
             self._path_length += 1
-            # Temporary solution
-            if d:
-                self._step_types.append(StepType.TERMINAL)
-            else:
-                self._step_types.append(StepType.MID)
+            self._step_types.append(es.step_type)
 
-            if not d:
-                self._prev_obs = next_o
+            if not es.last:
+                self._prev_obs = es.next_observation
                 return False
 
         self._lengths.append(self._path_length)

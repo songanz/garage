@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from garage.envs import GarageEnv
+from garage.envs import GymEnv
 from garage.tf.policies import CategoricalMLPPolicy
 
 from tests.fixtures import TfGraphTestCase
@@ -14,7 +14,7 @@ from tests.fixtures.envs.dummy import DummyBoxEnv, DummyDiscreteEnv
 class TestCategoricalMLPPolicy(TfGraphTestCase):
 
     def test_invalid_env(self):
-        env = GarageEnv(DummyBoxEnv())
+        env = GymEnv(DummyBoxEnv())
         with pytest.raises(ValueError):
             CategoricalMLPPolicy(env_spec=env.spec)
 
@@ -25,8 +25,7 @@ class TestCategoricalMLPPolicy(TfGraphTestCase):
         ((2, 2), 2),
     ])
     def test_get_action(self, obs_dim, action_dim):
-        env = GarageEnv(
-            DummyDiscreteEnv(obs_dim=obs_dim, action_dim=action_dim))
+        env = GymEnv(DummyDiscreteEnv(obs_dim=obs_dim, action_dim=action_dim))
         policy = CategoricalMLPPolicy(env_spec=env.spec)
         obs = env.reset()
 
@@ -46,8 +45,7 @@ class TestCategoricalMLPPolicy(TfGraphTestCase):
         ((2, 2), 2),
     ])
     def test_build(self, obs_dim, action_dim):
-        env = GarageEnv(
-            DummyDiscreteEnv(obs_dim=obs_dim, action_dim=action_dim))
+        env = GymEnv(DummyDiscreteEnv(obs_dim=obs_dim, action_dim=action_dim))
         policy = CategoricalMLPPolicy(env_spec=env.spec)
         obs = env.reset()
 
@@ -69,8 +67,7 @@ class TestCategoricalMLPPolicy(TfGraphTestCase):
         ((2, 2), 2),
     ])
     def test_is_pickleable(self, obs_dim, action_dim):
-        env = GarageEnv(
-            DummyDiscreteEnv(obs_dim=obs_dim, action_dim=action_dim))
+        env = GymEnv(DummyDiscreteEnv(obs_dim=obs_dim, action_dim=action_dim))
         policy = CategoricalMLPPolicy(env_spec=env.spec)
         obs = env.reset()
 
@@ -104,8 +101,7 @@ class TestCategoricalMLPPolicy(TfGraphTestCase):
         ((2, 2), 2),
     ])
     def test_get_regularizable_vars(self, obs_dim, action_dim):
-        env = GarageEnv(
-            DummyDiscreteEnv(obs_dim=obs_dim, action_dim=action_dim))
+        env = GymEnv(DummyDiscreteEnv(obs_dim=obs_dim, action_dim=action_dim))
         policy = CategoricalMLPPolicy(env_spec=env.spec)
         reg_vars = policy.get_regularizable_vars()
         assert len(reg_vars) == 2
@@ -113,7 +109,7 @@ class TestCategoricalMLPPolicy(TfGraphTestCase):
             assert ('bias' not in var.name) and ('output' not in var.name)
 
     def test_clone(self):
-        env = GarageEnv(DummyDiscreteEnv(obs_dim=(10, ), action_dim=4))
+        env = GymEnv(DummyDiscreteEnv(obs_dim=(10, ), action_dim=4))
         policy = CategoricalMLPPolicy(env_spec=env.spec)
         policy_clone = policy.clone('CategoricalMLPPolicyClone')
         assert policy.env_spec == policy_clone.env_spec

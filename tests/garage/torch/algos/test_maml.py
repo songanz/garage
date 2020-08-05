@@ -4,7 +4,7 @@ from functools import partial
 import pytest
 import torch
 
-from garage.envs import GarageEnv, normalize
+from garage.envs import GymEnv, normalize
 from garage.sampler import LocalSampler, WorkerFactory
 from garage.torch.algos import MAMLPPO
 from garage.torch.policies import GaussianMLPPolicy
@@ -31,7 +31,7 @@ class TestMAML:
 
     def setup_method(self):
         """Setup method which is called before every test."""
-        self.env = GarageEnv(
+        self.env = GymEnv(
             normalize(HalfCheetahDirEnv(), expected_action_scale=10.))
         self.policy = GaussianMLPPolicy(
             env_spec=self.env.spec,

@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from garage.envs import GarageEnv
+from garage.envs import GymEnv
 from garage.tf.policies import CategoricalCNNPolicy
 
 from tests.fixtures import TfGraphTestCase
@@ -20,7 +20,7 @@ class TestCategoricalCNNPolicyWithModel(TfGraphTestCase):
         (((3, (3, 3)), (3, (3, 3))), (2, 2), 'SAME', (4, 4)),
     ])
     def test_get_action(self, filters, strides, padding, hidden_sizes):
-        env = GarageEnv(DummyDiscretePixelEnv())
+        env = GymEnv(DummyDiscretePixelEnv())
         policy = CategoricalCNNPolicy(env_spec=env.spec,
                                       filters=filters,
                                       strides=strides,
@@ -43,7 +43,7 @@ class TestCategoricalCNNPolicyWithModel(TfGraphTestCase):
         (((3, (3, 3)), (3, (3, 3))), (2, 2), 'SAME', (4, 4)),
     ])
     def test_build(self, filters, strides, padding, hidden_sizes):
-        env = GarageEnv(DummyDiscretePixelEnv())
+        env = GymEnv(DummyDiscretePixelEnv())
         policy = CategoricalCNNPolicy(env_spec=env.spec,
                                       filters=filters,
                                       strides=strides,
@@ -64,7 +64,7 @@ class TestCategoricalCNNPolicyWithModel(TfGraphTestCase):
         assert np.array_equal(output1, output2)
 
     def test_is_pickleable(self):
-        env = GarageEnv(DummyDiscretePixelEnv())
+        env = GymEnv(DummyDiscretePixelEnv())
         policy = CategoricalCNNPolicy(env_spec=env.spec,
                                       filters=((3, (32, 32)), ),
                                       strides=(1, ),
@@ -104,7 +104,7 @@ class TestCategoricalCNNPolicyWithModel(TfGraphTestCase):
         (((3, (32, 32)), (3, (64, 64))), (2, 2), 'SAME', (4, 4)),
     ])
     def test_clone(self, filters, strides, padding, hidden_sizes):
-        env = GarageEnv(DummyDiscretePixelEnv())
+        env = GymEnv(DummyDiscretePixelEnv())
         policy = CategoricalCNNPolicy(env_spec=env.spec,
                                       filters=filters,
                                       strides=strides,

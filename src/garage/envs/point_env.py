@@ -1,10 +1,11 @@
 """Simple 2D environment containing a point and a goal location."""
-import akro
 import math
+
+import akro
 import numpy as np
 
-from garage import Environment, TimeStep, StepType
-from garage.envs import EnvSpec
+from garage import Environment, EnvSpec, EnvStep, StepType
+
 
 class PointEnv(Environment):
     """A simple 2D point environment.
@@ -21,14 +22,12 @@ class PointEnv(Environment):
 
     """
 
-    def __init__(
-        self,
-        goal=np.array((1., 1.), dtype=np.float32),
-        arena_size=5.,
-        done_bonus=0.,
-        never_done=False,
-        max_episode_length=math.inf
-    ):
+    def __init__(self,
+                 goal=np.array((1., 1.), dtype=np.float32),
+                 arena_size=5.,
+                 done_bonus=0.,
+                 never_done=False,
+                 max_episode_length=math.inf):
         goal = np.array(goal, dtype=np.float32)
         self._goal = goal
         self._done_bonus = done_bonus
@@ -44,13 +43,13 @@ class PointEnv(Environment):
         self._point = np.zeros_like(self._goal)
         self._task = {'goal': self._goal}
         self._observation_space = akro.Box(low=-np.inf,
-                                                 high=np.inf,
-                                                 shape=(3, ),
-                                                 dtype=np.float32)
+                                           high=np.inf,
+                                           shape=(3, ),
+                                           dtype=np.float32)
         self._action_space = akro.Box(low=-0.1,
-                                            high=0.1,
-                                            shape=(2, ),
-                                            dtype=np.float32)
+                                      high=0.1,
+                                      shape=(2, ),
+                                      dtype=np.float32)
         self._spec = EnvSpec(action_space=self.action_space,
                              observation_space=self.observation_space,
                              max_episode_length=max_episode_length)
@@ -79,12 +78,12 @@ class PointEnv(Environment):
         """Call reset on wrapped env.
 
         Returns:
-            numpy.ndarray: The first observation. It must conforms to
-            `observation_space`.
+            numpy.ndarray: The first observation. It must conform to
+                `observation_space`.
             dict: The episode-level information. Note that this is not part
-            of `env_info` provided in `step()`. It contains information of
-            the entire episode， which could be needed to determine the first
-            action (e.g. in the case of goal-conditioned or MTRL.)
+                of `env_info` provided in `step()`. It contains information of
+                the entire episode， which could be needed to determine the
+                first action (e.g. in the case of goal-conditioned or MTRL.)
 
         """
         self._point = np.zeros_like(self._goal)
@@ -103,7 +102,7 @@ class PointEnv(Environment):
             action (np.ndarray): An action provided by the agent.
 
         Returns:
-            TimeStep: The time step resulting from the action.
+            EnvStep: The time step resulting from the action.
 
         Raises:
             RuntimeError: if `step()` is called after the environment
@@ -148,15 +147,16 @@ class PointEnv(Environment):
         else:
             step_type = StepType.MID
 
-        return TimeStep(
-            env_spec=self.spec,
-            observation=last_obs,
-            action=action,
-            reward=reward,
-            next_observation=obs,
-            env_info={'task': self._task, 'success': succ},
-            agent_info={},  # TODO: can't be populated by env
-            step_type=step_type)
+        return EnvStep(env_spec=self.spec,
+                       observation=last_obs,
+                       action=action,
+                       reward=reward,
+                       next_observation=obs,
+                       env_info={
+                           'task': self._task,
+                           'success': succ
+                       },
+                       step_type=step_type)
 
     def render(self, mode):
         """Renders the environment.
@@ -201,4 +201,3 @@ class PointEnv(Environment):
         """
         self._task = task
         self._goal = task['goal']
-

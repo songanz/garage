@@ -7,8 +7,7 @@ from dm_control.rl.control import flatten_observation
 from dm_env import StepType as dm_StepType
 import numpy as np
 
-from garage import Environment, StepType, TimeStep
-from garage.envs import EnvSpec
+from garage import Environment, EnvSpec, EnvStep, StepType
 from garage.envs.dm_control.dm_control_viewer import DmControlViewer
 
 
@@ -24,11 +23,11 @@ def _flat_shape(observation):
     return np.sum(int(np.prod(v.shape)) for k, v in observation.items())
 
 
-class DmControlEnv(Environment):
+class DMControlEnv(Environment):
     """Binding for `dm_control <https://arxiv.org/pdf/1801.00690.pdf>`."""
 
-    def __init__(self, env, name=None, max_episode_length=math.inf):
-        """Create a DmControlEnv.
+    def __init__(self, env, name=None, max_episode_length=None):
+        """Create a DMControlEnv.
 
         Args:
             env (dm_control.suite.Task): The wrapped dm_control environment.
@@ -40,6 +39,17 @@ class DmControlEnv(Environment):
         self._viewer = None
         self._last_observation = None
         self._step_cnt = 0
+
+        dm_env_episode_length = self._env._step_limit
+        if max_episode_length:
+            if max_episode_length != dm_env_episode_length:
+                raise RuntimeError('Expect max_episode_length to '
+                                   'be equal to dm_env._step_limit'
+                                   '({}), but got {} instead'.format(
+                                       dm_env_episode_length,
+                                       max_episode_length))
+        else:
+            max_episode_length = dm_env_episode_length
         self._max_episode_length = max_episode_length
 
         # action space
@@ -85,7 +95,7 @@ class DmControlEnv(Environment):
         return ['rgb_array']
 
     @classmethod
-    def from_suite(cls, domain_name, task_name, max_episode_length=math.inf):
+    def from_suite(cls, domain_name, task_name, max_episode_length=None):
         """Create a DmControl task given the domain name and task name.
 
         Args:
@@ -93,7 +103,7 @@ class DmControlEnv(Environment):
             task_name (str): Task name
 
         Return:
-            dm_control.suit.Task: the dm_control task environment
+            dm_control.suite.Task: the dm_control task environment
         """
         return cls(env=suite.load(domain_name, task_name),
                    name='{}.{}'.format(domain_name, task_name),
@@ -103,12 +113,12 @@ class DmControlEnv(Environment):
         """Resets the environment.
 
         Returns:
-            numpy.ndarray: The first observation. It must conforms to
-            `observation_space`.
+            numpy.ndarray: The first observation. It must conform to
+                `observation_space`.
             dict: The episode-level information. Note that this is not part
-            of `env_info` provided in `step()`. It contains information of
-            the entire episode， which could be needed to determine the first
-            action (e.g. in the case of goal-conditioned or MTRL.)
+                of `env_info` provided in `step()`. It contains information of
+                the entire episode， which could be needed to determine the
+                first action (e.g. in the case of goal-conditioned or MTRL.)
 
         """
         time_step = self._env.reset()
@@ -116,18 +126,16 @@ class DmControlEnv(Environment):
 
         self._step_cnt = 0
         self._last_observation = first_obs
-        # Populate episode_info if needed.
-        episode_info = {}
-        return first_obs, episode_info
+        return first_obs, {}
 
     def step(self, action):
-        """Steps the environment with the action and returns a `TimeStep`.
+        """Steps the environment with the action and returns a `EnvStep`.
 
         Args:
             action (object): input action
 
         Returns:
-            TimeStep: The time step resulting from the action.
+            EnvStep: The time step resulting from the action.
 
         Raises:
             RuntimeError: if `step()` is called after the environment has been
@@ -150,19 +158,20 @@ class DmControlEnv(Environment):
         # Determine step type
         step_type = None
         if dm_time_step.step_type == dm_StepType.MID:
-            step_type = StepType.TIMEOUT if \
-                self._step_cnt >= self._max_episode_length else StepType.MID
+            if self._step_cnt >= self._max_episode_length:
+                step_type = StepType.TIMEOUT
+            else:
+                step_type = StepType.MID
         elif dm_time_step.step_type == dm_StepType.LAST:
             step_type = StepType.TERMINAL
 
-        return TimeStep(
+        return EnvStep(
             env_spec=self.spec,
             observation=last_obs,
             action=action,
             reward=dm_time_step.reward,
             next_observation=observation,
             env_info=dm_time_step.observation,  # TODO: what to put in env_info
-            agent_info={},  # TODO: can't be populated by env
             step_type=step_type)
 
     def render(self, mode):
@@ -177,13 +186,9 @@ class DmControlEnv(Environment):
         Raises:
             ValueError: if mode is not supported.
         """
-        # pylint: disable=inconsistent-return-statements
+        self._validate_render_mode(mode)
         if mode == 'rgb_array':
             return self._env.physics.render()
-        else:
-            raise ValueError('Supported render modes are {}, but '
-                             'got render mode {} instead.'.format(
-                                 self.render_modes, mode))
 
     def visualize(self):
         """Creates a visualization of the environment."""

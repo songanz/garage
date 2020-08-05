@@ -107,18 +107,18 @@ class DefaultWorker(Worker):
         """
         if self._path_length < self._max_episode_length:
             a, agent_info = self.agent.get_action(self._prev_obs)
-            ts = self.env.step(a)
+            es = self.env.step(a)
             self._observations.append(self._prev_obs)
-            self._rewards.append(ts.reward)
-            self._actions.append(ts.action)
+            self._rewards.append(es.reward)
+            self._actions.append(es.action)
             for k, v in agent_info.items():
                 self._agent_infos[k].append(v)
-            for k, v in ts.env_info.items():
+            for k, v in es.env_info.items():
                 self._env_infos[k].append(v)
             self._path_length += 1
-            self._step_types.append(ts.step_type)
-            if not ts.last:
-                self._prev_obs = ts.next_observation
+            self._step_types.append(es.step_type)
+            if not es.last:
+                self._prev_obs = es.next_observation
                 return False
         self._lengths.append(self._path_length)
         self._last_observations.append(self._prev_obs)

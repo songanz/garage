@@ -9,7 +9,7 @@ import gym
 import ray
 
 from garage import wrap_experiment
-from garage.envs import GarageEnv
+from garage.envs import GymEnv
 from garage.experiment import LocalTFRunner
 from garage.experiment.deterministic import set_seed
 from garage.np.baselines import LinearFeatureBaseline
@@ -39,7 +39,7 @@ def trpo_swimmer_ray_sampler(ctxt=None, seed=1):
              include_webui=False)
     with LocalTFRunner(snapshot_config=ctxt) as runner:
         set_seed(seed)
-        env = GarageEnv(gym.make('Swimmer-v2'))
+        env = GymEnv(gym.make('Swimmer-v2'))
 
         policy = GaussianMLPPolicy(env_spec=env.spec, hidden_sizes=(32, 32))
 

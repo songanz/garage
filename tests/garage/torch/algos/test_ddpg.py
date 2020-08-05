@@ -4,7 +4,7 @@ import pytest
 import torch
 from torch.nn import functional as F  # NOQA
 
-from garage.envs import GarageEnv, normalize
+from garage.envs import GymEnv, normalize
 from garage.experiment import deterministic, LocalRunner
 from garage.np.exploration_policies import AddOrnsteinUhlenbeckNoise
 from garage.replay_buffer import PathBuffer
@@ -23,7 +23,7 @@ class TestDDPG:
         """Test DDPG with Pendulum environment."""
         deterministic.set_seed(0)
         runner = LocalRunner(snapshot_config)
-        env = GarageEnv(gym.make('InvertedDoublePendulum-v2'))
+        env = GymEnv(gym.make('InvertedDoublePendulum-v2'))
         policy = DeterministicMLPPolicy(env_spec=env.spec,
                                         hidden_sizes=[64, 64],
                                         hidden_nonlinearity=F.relu,
@@ -65,7 +65,7 @@ class TestDDPG:
         """
         deterministic.set_seed(0)
         runner = LocalRunner(snapshot_config)
-        env = normalize(GarageEnv(gym.make('InvertedPendulum-v2')))
+        env = normalize(GymEnv(gym.make('InvertedPendulum-v2')))
 
         policy = DeterministicMLPPolicy(env_spec=env.spec,
                                         hidden_sizes=[64, 64],

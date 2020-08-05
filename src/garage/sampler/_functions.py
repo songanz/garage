@@ -13,13 +13,13 @@ def _apply_env_update(old_env, env_update):
     `env_update` into `obtain_samples`.
 
     Args:
-        old_env (GarageEnv): Environment to updated.
-        env_update (GarageEnv or EnvUpdate or None): The environment to
+        old_env (Environment): Environment to updated.
+        env_update (Environment or EnvUpdate or None): The environment to
             replace the existing env with. Note that other implementations
             of `Worker` may take different types for this parameter.
 
     Returns:
-        GarageEnv: The updated environment (may be a different object from
+        Environment: The updated environment (may be a different object from
             `old_env`).
         bool: True if an update happened.
 

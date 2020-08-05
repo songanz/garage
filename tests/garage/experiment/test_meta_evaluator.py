@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from garage.envs import GarageEnv, PointEnv
+from garage.envs import PointEnv
 from garage.experiment import LocalTFRunner, MetaEvaluator, SnapshotConfig
 from garage.experiment.deterministic import set_seed
 from garage.experiment.local_runner import LocalRunner

@@ -42,17 +42,17 @@ class InProgressTrajectory:
             np.ndarray: The new observation from the environment.
 
         """
-        ts = self.env.step(action)
+        es = self.env.step(action)
 
-        self.observations.append(ts.next_observation)
-        self.rewards.append(ts.reward)
-        self.actions.append(ts.action)
+        self.observations.append(es.next_observation)
+        self.rewards.append(es.reward)
+        self.actions.append(es.action)
         for k, v in agent_info.items():
             self.agent_infos[k].append(v)
-        for k, v in ts.env_info.items():
+        for k, v in es.env_info.items():
             self.env_infos[k].append(v)
-        self.step_types.append(ts.step_type)
-        return ts.next_observation
+        self.step_types.append(es.step_type)
+        return es.next_observation
 
     def to_batch(self):
         """Convert this in-progress trajectory into a TrajectoryBatch.

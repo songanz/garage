@@ -7,7 +7,7 @@ import gym
 import tensorflow as tf
 
 from garage import wrap_experiment
-from garage.envs import GarageEnv
+from garage.envs import GymEnv
 from garage.experiment import LocalTFRunner
 from garage.experiment.deterministic import set_seed
 from garage.np.exploration_policies import AddOrnsteinUhlenbeckNoise
@@ -30,7 +30,7 @@ def her_ddpg_fetchreach(ctxt=None, seed=1):
     """
     set_seed(seed)
     with LocalTFRunner(snapshot_config=ctxt) as runner:
-        env = GarageEnv(gym.make('FetchReach-v1'))
+        env = GymEnv(gym.make('FetchReach-v1'))
 
         policy = ContinuousMLPPolicy(
             env_spec=env.spec,

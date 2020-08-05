@@ -1,10 +1,8 @@
 """An environment wrapper that normalizes action, observation and reward."""
-from copy import deepcopy
-
 import akro
 import numpy as np
 
-from garage import Environment, TimeStep
+from garage import Environment, EnvStep
 
 
 class NormalizedEnv(Environment):
@@ -29,15 +27,15 @@ class NormalizedEnv(Environment):
     """
 
     def __init__(
-            self,
-            env,
-            scale_reward=1.,
-            normalize_obs=False,
-            normalize_reward=False,
-            expected_action_scale=1.,
-            flatten_obs=True,
-            obs_alpha=0.001,
-            reward_alpha=0.001,
+        self,
+        env,
+        scale_reward=1.,
+        normalize_obs=False,
+        normalize_reward=False,
+        expected_action_scale=1.,
+        flatten_obs=True,
+        obs_alpha=0.001,
+        reward_alpha=0.001,
     ):
         self.env = env
 
@@ -48,7 +46,6 @@ class NormalizedEnv(Environment):
         self._flatten_obs = flatten_obs
 
         self._obs_alpha = obs_alpha
-        print(self.env.observation_space)
         flat_obs_dim = self.env.observation_space.flat_dim
         self._obs_mean = np.zeros(flat_obs_dim)
         self._obs_var = np.ones(flat_obs_dim)
@@ -69,7 +66,7 @@ class NormalizedEnv(Environment):
 
     @property
     def spec(self):
-        """garage.envs.env_spec.EnvSpec: The envionrment specification."""
+        """EnvSpec: The envionrment specification."""
         return self.env.spec
 
     @property
@@ -77,22 +74,19 @@ class NormalizedEnv(Environment):
         """list: A list of string representing the supported render modes."""
         return self.env.render_modes
 
-    def reset(self, **kwargs):
+    def reset(self):
         """Call reset on wrapped env.
 
-        Args:
-            kwargs: Keyword args
-
         Returns:
-            numpy.ndarray: The first observation. It must conforms to
-            `observation_space`.
+            numpy.ndarray: The first observation. It must conform to
+                `observation_space`.
             dict: The episode-level information. Note that this is not part
-            of `env_info` provided in `step()`. It contains information of
-            the entire episode， which could be needed to determine the first
-            action (e.g. in the case of goal-conditioned or MTRL.)
+                of `env_info` provided in `step()`. It contains information of
+                the entire episode， which could be needed to determine the
+                first action (e.g. in the case of goal-conditioned or MTRL.)
 
         """
-        first_obs, episode_info = self.env.reset(**kwargs)
+        first_obs, episode_info = self.env.reset()
         if self._normalize_obs:
             return self._apply_normalize_obs(first_obs), episode_info
         else:
@@ -105,7 +99,7 @@ class NormalizedEnv(Environment):
             action (np.ndarray): An action provided by the agent.
 
         Returns:
-            TimeStep: The time step resulting from the action.
+            EnvStep: The time step resulting from the action.
 
         Raises:
             RuntimeError: if `step()` is called after the environment has been
@@ -124,24 +118,22 @@ class NormalizedEnv(Environment):
         else:
             scaled_action = action
 
-        ts = self.env.step(scaled_action)
-        next_obs = deepcopy(ts.observation)
-        reward = ts.reward
+        es = self.env.step(scaled_action)
+        next_obs = es.observation
+        reward = es.reward
 
         if self._normalize_obs:
             next_obs = self._apply_normalize_obs(next_obs)
         if self._normalize_reward:
             reward = self._apply_normalize_reward(reward)
 
-        return TimeStep(
-            env_spec=ts.env_spec,  # TODO: update spec?
-            observation=ts.observation,
-            action=ts.action,
-            reward=reward * self._scale_reward,
-            next_observation=next_obs,
-            env_info=ts.env_info,
-            agent_info=ts.agent_info,
-            step_type=ts.step_type)
+        return EnvStep(env_spec=es.env_spec,
+                       observation=es.observation,
+                       action=es.action,
+                       reward=reward * self._scale_reward,
+                       next_observation=next_obs,
+                       env_info=es.env_info,
+                       step_type=es.step_type)
 
     def render(self, mode):
         """Renders the environment.
@@ -159,6 +151,30 @@ class NormalizedEnv(Environment):
     def close(self):
         """Close the wrapped env."""
         self.env.close()
+
+    def sample_tasks(self, num_tasks):
+        """Sample a list of `num_tasks` tasks.
+
+        Args:
+            num_tasks (int): Number of tasks to sample.
+
+        Returns:
+            list[dict[str, float]]: A list of "tasks," where each task is a
+                dictionary containing a single key, "direction", mapping to -1
+                or 1.
+
+        """
+        return self.env.sample_tasks(num_tasks)
+
+    def set_task(self, task):
+        """Reset with a task.
+
+        Args:
+            task (dict[str, float]): A task (a dictionary containing a single
+                key, "direction", mapping to -1 or 1).
+
+        """
+        self.env.set_task(task)
 
     def _update_obs_estimate(self, obs):
         flat_obs = self.env.observation_space.flatten(obs)

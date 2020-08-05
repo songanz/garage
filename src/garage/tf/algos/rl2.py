@@ -9,9 +9,8 @@ import akro
 from dowel import logger
 import numpy as np
 
-from garage import (Environment, log_multitask_performance, StepType, TimeStep,
-                    TrajectoryBatch)
-from garage.envs import EnvSpec
+from garage import (Environment, EnvSpec, EnvStep, log_multitask_performance,
+                    StepType, TrajectoryBatch)
 from garage.misc import tensor_utils as np_tensor_utils
 from garage.np.algos import MetaRLAlgorithm
 from garage.sampler import DefaultWorker
@@ -34,9 +33,10 @@ class RL2Env(Environment):
         self._last_observation = None
 
         self._observation_space = self._create_rl2_obs_space()
-        self._spec = EnvSpec(action_space=self.env.action_space,
-                             observation_space=self._observation_space,
-                             max_episode_length=self.env.spec.max_episode_length)
+        self._spec = EnvSpec(
+            action_space=self.env.action_space,
+            observation_space=self._observation_space,
+            max_episode_length=self.env.spec.max_episode_length)
 
     @property
     def action_space(self):
@@ -58,22 +58,18 @@ class RL2Env(Environment):
         """list: A list of string representing the supported render modes."""
         return self.env.render_modes
 
-    def reset(self, **kwargs):
+    def reset(self):
         """Call reset on wrapped env.
 
-        Args:
-            kwargs: Keyword args
-
         Returns:
-            numpy.ndarray: The first observation. It must conforms to
-            `observation_space`.
+            numpy.ndarray: The first observation. It must conform to
+                `observation_space`.
             dict: The episode-level information. Note that this is not part
-            of `env_info` provided in `step()`. It contains information of
-            the entire episode， which could be needed to determine the first
-            action (e.g. in the case of goal-conditioned or MTRL.)
+                of `env_info` provided in `step()`. It contains information of
+                the entire episode， which could be needed to determine the
+                first action (e.g. in the case of goal-conditioned or MTRL.)
 
         """
-        del kwargs
         first_obs, episode_info = self.env.reset()
         first_obs = np.concatenate(
             [first_obs,
@@ -90,7 +86,7 @@ class RL2Env(Environment):
             action (np.ndarray): An action provided by the agent.
 
         Returns:
-            TimeStep: The time step resulting from the action.
+            EnvStep: The time step resulting from the action.
 
         Raises:
             RuntimeError: if `step()` is called after the environment has been
@@ -99,20 +95,19 @@ class RL2Env(Environment):
         """
         ts = self.env.step(action)
         next_obs = ts.observation
-        next_obs = np.concatenate([next_obs, action, [ts.reward],
-                                      [ts.step_type == StepType.TERMINAL]])
+        next_obs = np.concatenate([
+            next_obs, action, [ts.reward], [ts.step_type == StepType.TERMINAL]
+        ])
         last_obs = self._last_observation
         self._last_observation = next_obs
 
-        return TimeStep(
-            env_spec=self.spec,
-            observation=last_obs,
-            action=action,
-            reward=ts.reward,
-            next_observation=next_obs,
-            env_info=ts.env_info,
-            agent_info=ts.agent_info,
-            step_type=ts.step_type)
+        return EnvStep(env_spec=self.spec,
+                       observation=last_obs,
+                       action=action,
+                       reward=ts.reward,
+                       next_observation=next_obs,
+                       env_info=ts.env_info,
+                       step_type=ts.step_type)
 
     def render(self, mode):
         """Renders the environment.

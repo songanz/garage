@@ -514,7 +514,7 @@ class TimeStep(
         agent_info (dict): A dict of arbitrary agent
             state information. For example, this may contain the hidden states
             from an RNN policy.
-        step_type (garage.StepType): a `StepType` enum value. Can either be
+        step_type (StepType): a `StepType` enum value. Can either be
             StepType.FIRST, StepType.MID, StepType.TERMINAL, StepType.TIMEOUT.
 
 
@@ -624,6 +624,27 @@ class TimeStep(
         """bool: Whether this `TimeStep` is the last of a sequence."""
         return self.step_type is StepType.TERMINAL or self.step_type \
             is StepType.TIMEOUT
+
+    @classmethod
+    def from_env_step(cls, env_step, agent_info):
+        """Create a TimeStep from a EnvStep.
+
+        Args:
+            env_step (EnvStep): the env step returned by the environment.
+            agent_info (dict):  A dict of arbitrary agent state information.
+
+        Returns:
+            TimeStep: The TimeStep with all information of EnvStep plus the
+            agent info.
+        """
+        return cls(env_spec=env_step.env_spec,
+                   observation=env_step.observation,
+                   action=env_step.action,
+                   reward=env_step.reward,
+                   next_observation=env_step.next_observation,
+                   env_info=env_step.env_info,
+                   agent_info=agent_info,
+                   step_type=env_step.step_type)
 
 
 class InOutSpec:

@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from garage.envs import GarageEnv
+from garage.envs import GymEnv
 from garage.experiment import deterministic, LocalTFRunner
 from garage.np.exploration_policies import EpsilonGreedyPolicy
 from garage.replay_buffer import PathBuffer
@@ -31,7 +31,7 @@ class TestDQN(TfGraphTestCase):
             steps_per_epoch = 10
             sampler_batch_size = 500
             num_timesteps = n_epochs * steps_per_epoch * sampler_batch_size
-            env = GarageEnv(gym.make('CartPole-v0'))
+            env = GymEnv(gym.make('CartPole-v0'))
             replay_buffer = PathBuffer(capacity_in_transitions=int(1e4))
             qf = DiscreteMLPQFunction(env_spec=env.spec, hidden_sizes=(64, 64))
             policy = DiscreteQfDerivedPolicy(env_spec=env.spec, qf=qf)
@@ -73,7 +73,7 @@ class TestDQN(TfGraphTestCase):
             steps_per_epoch = 10
             sampler_batch_size = 500
             num_timesteps = n_epochs * steps_per_epoch * sampler_batch_size
-            env = GarageEnv(gym.make('CartPole-v0'))
+            env = GymEnv(gym.make('CartPole-v0'))
             replay_buffer = PathBuffer(capacity_in_transitions=int(1e4))
             qf = DiscreteMLPQFunction(env_spec=env.spec, hidden_sizes=(64, 64))
             policy = DiscreteQfDerivedPolicy(env_spec=env.spec, qf=qf)
@@ -115,7 +115,7 @@ class TestDQN(TfGraphTestCase):
             steps_per_epoch = 10
             sampler_batch_size = 500
             num_timesteps = n_epochs * steps_per_epoch * sampler_batch_size
-            env = GarageEnv(gym.make('CartPole-v0'))
+            env = GymEnv(gym.make('CartPole-v0'))
             replay_buffer = PathBuffer(capacity_in_transitions=int(1e4))
             qf = DiscreteMLPQFunction(env_spec=env.spec, hidden_sizes=(64, 64))
             policy = DiscreteQfDerivedPolicy(env_spec=env.spec, qf=qf)
@@ -157,7 +157,7 @@ class TestDQN(TfGraphTestCase):
             steps_per_epoch = 10
             sampler_batch_size = 500
             num_timesteps = n_epochs * steps_per_epoch * sampler_batch_size
-            env = GarageEnv(gym.make('CartPole-v0'))
+            env = GymEnv(gym.make('CartPole-v0'))
             replay_buffer = PathBuffer(capacity_in_transitions=int(1e4))
             qf = DiscreteMLPQFunction(env_spec=env.spec, hidden_sizes=(64, 64))
             policy = DiscreteQfDerivedPolicy(env_spec=env.spec, qf=qf)

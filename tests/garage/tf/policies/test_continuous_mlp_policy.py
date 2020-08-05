@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from garage.envs import GarageEnv
+from garage.envs import GymEnv
 from garage.tf.policies import ContinuousMLPPolicy
 
 from tests.fixtures import TfGraphTestCase
@@ -26,7 +26,7 @@ class TestContinuousMLPPolicy(TfGraphTestCase):
     ])
     def test_get_action(self, obs_dim, action_dim):
         """Test get_action method"""
-        env = GarageEnv(DummyBoxEnv(obs_dim=obs_dim, action_dim=action_dim))
+        env = GymEnv(DummyBoxEnv(obs_dim=obs_dim, action_dim=action_dim))
         policy = ContinuousMLPPolicy(env_spec=env.spec)
 
         env.reset()
@@ -52,7 +52,7 @@ class TestContinuousMLPPolicy(TfGraphTestCase):
     ])
     def test_build(self, obs_dim, action_dim):
         """Test build method"""
-        env = GarageEnv(DummyBoxEnv(obs_dim=obs_dim, action_dim=action_dim))
+        env = GymEnv(DummyBoxEnv(obs_dim=obs_dim, action_dim=action_dim))
         policy = ContinuousMLPPolicy(env_spec=env.spec)
 
         env.reset()
@@ -79,7 +79,7 @@ class TestContinuousMLPPolicy(TfGraphTestCase):
     ])
     def test_is_pickleable(self, obs_dim, action_dim):
         """Test if ContinuousMLPPolicy is pickleable"""
-        env = GarageEnv(DummyBoxEnv(obs_dim=obs_dim, action_dim=action_dim))
+        env = GymEnv(DummyBoxEnv(obs_dim=obs_dim, action_dim=action_dim))
         policy = ContinuousMLPPolicy(env_spec=env.spec)
         state_input = tf.compat.v1.placeholder(tf.float32,
                                                shape=(None, np.prod(obs_dim)))
@@ -110,7 +110,7 @@ class TestContinuousMLPPolicy(TfGraphTestCase):
     ])
     def test_get_regularizable_vars(self, obs_dim, action_dim):
         """Test get_regularizable_vars method"""
-        env = GarageEnv(DummyBoxEnv(obs_dim=obs_dim, action_dim=action_dim))
+        env = GymEnv(DummyBoxEnv(obs_dim=obs_dim, action_dim=action_dim))
         policy = ContinuousMLPPolicy(env_spec=env.spec)
         reg_vars = policy.get_regularizable_vars()
         assert len(reg_vars) == 2

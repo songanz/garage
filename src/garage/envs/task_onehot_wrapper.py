@@ -3,12 +3,10 @@
 See `~TaskOnehotWrapper.wrap_env_list` for the main way of using this module.
 
 """
-from copy import deepcopy
-
 import akro
 import numpy as np
 
-from garage import Environment, TimeStep
+from garage import Environment, EnvStep
 from garage.envs.env_spec import EnvSpec
 
 
@@ -35,12 +33,13 @@ class TaskOnehotWrapper(Environment):
         one_hot_ub = np.ones(self._n_total_tasks)
         one_hot_lb = np.zeros(self._n_total_tasks)
         self._last_observation = None
-        self._observation_space = akro.Box(np.concatenate([env_lb,
-                                                           one_hot_lb]),
-                                          np.concatenate([env_ub, one_hot_ub]))
-        self._spec = EnvSpec(action_space=self.action_space,
-                             observation_space=self.observation_space,
-                             max_episode_length=self.env.spec.max_episode_length)
+        self._observation_space = akro.Box(
+            np.concatenate([env_lb, one_hot_lb]),
+            np.concatenate([env_ub, one_hot_ub]))
+        self._spec = EnvSpec(
+            action_space=self.action_space,
+            observation_space=self.observation_space,
+            max_episode_length=self.env.spec.max_episode_length)
 
     @property
     def action_space(self):
@@ -57,7 +56,7 @@ class TaskOnehotWrapper(Environment):
         """Return the environment specification.
 
         Returns:
-            garage.envs.env_spec.EnvSpec: The envionrment specification.
+            EnvSpec: The envionrment specification.
 
         """
         return self._spec
@@ -67,22 +66,19 @@ class TaskOnehotWrapper(Environment):
         """list: A list of string representing the supported render modes."""
         return self.env.render_modes
 
-    def reset(self, **kwargs):
+    def reset(self):
         """Sample new task and call reset on new task env.
 
-        Args:
-            kwargs (dict): Keyword arguments to be passed to env.reset
-
         Returns:
-            numpy.ndarray: The first observation. It must conforms to
-            `observation_space`.
+            numpy.ndarray: The first observation. It must conform to
+                `observation_space`.
             dict: The episode-level information. Note that this is not part
-            of `env_info` provided in `step()`. It contains information of
-            the entire episode， which could be needed to determine the first
-            action (e.g. in the case of goal-conditioned or MTRL.)
+                of `env_info` provided in `step()`. It contains information of
+                the entire episode， which could be needed to determine the
+                first action (e.g. in the case of goal-conditioned or MTRL.)
 
         """
-        first_obs, episode_info = self.env.reset(**kwargs)
+        first_obs, episode_info = self.env.reset()
         first_obs = self._obs_with_one_hot(first_obs)
         self._last_observation = first_obs
         return first_obs, episode_info
@@ -95,29 +91,27 @@ class TaskOnehotWrapper(Environment):
                 environment.
 
         Returns:
-            TimeStep: The time step resulting from the action.
+            EnvStep: The time step resulting from the action.
 
         """
-        ts = self.env.step(action)
-        obs = ts.observation
+        es = self.env.step(action)
+        obs = es.observation
         oh_obs = self._obs_with_one_hot(obs)
 
         last_obs = self._last_observation
         self._last_observation = last_obs
 
-        env_info = deepcopy(ts.env_info)
+        env_info = es.env_info
 
         env_info['task_id'] = self._task_index
 
-        return TimeStep(
-            env_spec=self.spec,
-            observation=last_obs,
-            action=action,
-            reward=ts.reward,
-            next_observation=oh_obs,
-            env_info=env_info,
-            agent_info=ts.agent_info,
-            step_type=ts.step_type)
+        return EnvStep(env_spec=self.spec,
+                       observation=last_obs,
+                       action=action,
+                       reward=es.reward,
+                       next_observation=oh_obs,
+                       env_info=env_info,
+                       step_type=es.step_type)
 
     def render(self, mode):
         """Renders the environment.

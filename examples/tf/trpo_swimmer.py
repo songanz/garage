@@ -3,7 +3,7 @@
 import gym
 
 from garage import wrap_experiment
-from garage.envs import GarageEnv
+from garage.envs import GymEnv
 from garage.experiment import LocalTFRunner
 from garage.experiment.deterministic import set_seed
 from garage.np.baselines import LinearFeatureBaseline
@@ -25,7 +25,7 @@ def trpo_swimmer(ctxt=None, seed=1, batch_size=4000):
     """
     set_seed(seed)
     with LocalTFRunner(ctxt) as runner:
-        env = GarageEnv(gym.make('Swimmer-v2'))
+        env = GymEnv(gym.make('Swimmer-v2'))
 
         policy = GaussianMLPPolicy(env_spec=env.spec, hidden_sizes=(32, 32))
 

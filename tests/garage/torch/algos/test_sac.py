@@ -7,7 +7,7 @@ import pytest
 import torch
 from torch.nn import functional as F
 
-from garage.envs import GarageEnv, normalize
+from garage.envs import GymEnv, normalize
 from garage.experiment import deterministic, LocalRunner
 from garage.replay_buffer import PathBuffer
 from garage.sampler import LocalSampler
@@ -175,7 +175,7 @@ def testTemperatureLoss():
 def test_sac_inverted_double_pendulum():
     """Test Sac performance on inverted pendulum."""
     # pylint: disable=unexpected-keyword-arg
-    env = normalize(GarageEnv(gym.make('InvertedDoublePendulum-v2')))
+    env = normalize(GymEnv(gym.make('InvertedDoublePendulum-v2')))
     deterministic.set_seed(0)
     policy = TanhGaussianMLPPolicy(
         env_spec=env.spec,
@@ -229,7 +229,7 @@ def test_sac_inverted_double_pendulum():
 def test_fixed_alpha():
     """Test if using fixed_alpha ensures that alpha is non differentiable."""
     # pylint: disable=unexpected-keyword-arg
-    env = normalize(GarageEnv(gym.make('InvertedDoublePendulum-v2')))
+    env = normalize(GymEnv(gym.make('InvertedDoublePendulum-v2')))
     deterministic.set_seed(0)
     policy = TanhGaussianMLPPolicy(
         env_spec=env.spec,

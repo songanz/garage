@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from garage.envs import GarageEnv
+from garage.envs import GymEnv
 from garage.tf.policies import GaussianMLPPolicy
 
 from tests.fixtures import TfGraphTestCase
@@ -14,7 +14,7 @@ from tests.fixtures.envs.dummy import DummyBoxEnv, DummyDiscreteEnv
 class TestGaussianMLPPolicy(TfGraphTestCase):
 
     def test_invalid_env(self):
-        env = GarageEnv(DummyDiscreteEnv())
+        env = GymEnv(DummyDiscreteEnv())
         with pytest.raises(ValueError):
             GaussianMLPPolicy(env_spec=env.spec)
 
@@ -27,7 +27,7 @@ class TestGaussianMLPPolicy(TfGraphTestCase):
         ((2, 2), (2, 2)),
     ])
     def test_get_action(self, obs_dim, action_dim):
-        env = GarageEnv(DummyBoxEnv(obs_dim=obs_dim, action_dim=action_dim))
+        env = GymEnv(DummyBoxEnv(obs_dim=obs_dim, action_dim=action_dim))
         policy = GaussianMLPPolicy(env_spec=env.spec)
 
         env.reset()
@@ -50,7 +50,7 @@ class TestGaussianMLPPolicy(TfGraphTestCase):
         ((2, 2), (2, 2)),
     ])
     def test_build(self, obs_dim, action_dim):
-        env = GarageEnv(DummyBoxEnv(obs_dim=obs_dim, action_dim=action_dim))
+        env = GymEnv(DummyBoxEnv(obs_dim=obs_dim, action_dim=action_dim))
         policy = GaussianMLPPolicy(env_spec=env.spec)
         obs = env.reset()
 
@@ -74,7 +74,7 @@ class TestGaussianMLPPolicy(TfGraphTestCase):
         ((2, 2), (2, 2)),
     ])
     def test_is_pickleable(self, obs_dim, action_dim):
-        env = GarageEnv(DummyBoxEnv(obs_dim=obs_dim, action_dim=action_dim))
+        env = GymEnv(DummyBoxEnv(obs_dim=obs_dim, action_dim=action_dim))
         policy = GaussianMLPPolicy(env_spec=env.spec)
 
         obs = env.reset()
@@ -104,7 +104,7 @@ class TestGaussianMLPPolicy(TfGraphTestCase):
             assert np.array_equal(output1, output2)
 
     def test_clone(self):
-        env = GarageEnv(DummyBoxEnv(obs_dim=(10, ), action_dim=(4, )))
+        env = GymEnv(DummyBoxEnv(obs_dim=(10, ), action_dim=(4, )))
         policy = GaussianMLPPolicy(env_spec=env.spec)
         policy_clone = policy.clone('GaussnaMLPPolicyClone')
         assert policy.env_spec == policy_clone.env_spec

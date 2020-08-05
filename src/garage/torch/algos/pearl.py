@@ -10,8 +10,7 @@ from dowel import logger
 import numpy as np
 import torch
 
-from garage import InOutSpec, StepType, TimeStep
-from garage.envs import EnvSpec
+from garage import EnvSpec, InOutSpec, StepType, TimeStep
 from garage.experiment import MetaEvaluator
 from garage.np.algos import MetaRLAlgorithm
 from garage.replay_buffer import PathBuffer
@@ -32,7 +31,7 @@ class PEARL(MetaRLAlgorithm):
     behavior to specific tasks.
 
     Args:
-        env (list[GarageEnv]): Batch of sampled environment updates(EnvUpdate),
+        env (list[GymEnv]): Batch of sampled environment updates(EnvUpdate),
             which, when invoked on environments, will configure them with new
             tasks.
         policy_class (garage.torch.policies.Policy): Context-conditioned policy
@@ -626,11 +625,11 @@ class PEARL(MetaRLAlgorithm):
         """Augment environment by a size of latent dimension.
 
         Args:
-            env_spec (garage.envs.EnvSpec): Environment specs to be augmented.
+            env_spec (EnvSpec): Environment specs to be augmented.
             latent_dim (int): Latent dimension.
 
         Returns:
-            garage.envs.EnvSpec: Augmented environment specs.
+            EnvSpec: Augmented environment specs.
 
         """
         obs_dim = int(np.prod(env_spec.observation_space.shape))
@@ -650,7 +649,7 @@ class PEARL(MetaRLAlgorithm):
         """Get environment specs of encoder with latent dimension.
 
         Args:
-            env_spec (garage.envs.EnvSpec): Environment specs.
+            env_spec (EnvSpec): Environment specs.
             latent_dim (int): Latent dimension.
             module (str): Module to get environment specs for.
 

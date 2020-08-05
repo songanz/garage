@@ -2,7 +2,7 @@
 import cloudpickle
 import pytest
 
-from garage.envs import GarageEnv
+from garage.envs import GymEnv
 from garage.torch import TransposeImage
 from garage.torch.policies import CategoricalCNNPolicy
 
@@ -34,7 +34,7 @@ class TestCategoricalCNNPolicy:
     def test_get_action(self, hidden_channels, kernel_sizes, strides,
                         hidden_sizes):
         """Test get_action function."""
-        env = GarageEnv(DummyDiscretePixelEnv())
+        env = GymEnv(DummyDiscretePixelEnv())
         env = self._initialize_obs_env(env)
         policy = CategoricalCNNPolicy(env=env,
                                       kernel_sizes=kernel_sizes,
@@ -56,7 +56,7 @@ class TestCategoricalCNNPolicy:
     def test_get_action_img_obs(self, hidden_channels, kernel_sizes, strides,
                                 hidden_sizes):
         """Test get_action function with akro.Image observation space."""
-        env = GarageEnv(DummyDiscretePixelEnv(), is_image=True)
+        env = GymEnv(DummyDiscretePixelEnv(), is_image=True)
         env = self._initialize_obs_env(env)
         policy = CategoricalCNNPolicy(env=env,
                                       kernel_sizes=kernel_sizes,
@@ -78,7 +78,7 @@ class TestCategoricalCNNPolicy:
     def test_get_actions(self, hidden_channels, kernel_sizes, strides,
                          hidden_sizes):
         """Test get_actions function with akro.Image observation space."""
-        env = GarageEnv(DummyDiscretePixelEnv(), is_image=True)
+        env = GymEnv(DummyDiscretePixelEnv(), is_image=True)
         env = self._initialize_obs_env(env)
         policy = CategoricalCNNPolicy(env=env,
                                       kernel_sizes=kernel_sizes,
@@ -101,7 +101,7 @@ class TestCategoricalCNNPolicy:
     def test_is_pickleable(self, hidden_channels, kernel_sizes, strides,
                            hidden_sizes):
         """Test if policy is pickable."""
-        env = GarageEnv(DummyDiscretePixelEnv(), is_image=True)
+        env = GymEnv(DummyDiscretePixelEnv(), is_image=True)
         env = self._initialize_obs_env(env)
         policy = CategoricalCNNPolicy(env=env,
                                       kernel_sizes=kernel_sizes,

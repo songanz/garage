@@ -22,23 +22,18 @@ def step_bullet_kuka_env(n_steps=1000):
 
     """
     # Construct the environment
-    env = BulletEnv(
-        gym.make('KukaBulletEnv-v0',
-                 renders=True,
-                 isDiscrete=True,
-                 maxSteps=2000))
+    env = BulletEnv(gym.make('KukaBulletEnv-v0', renders=True,
+                             isDiscrete=True))
 
     # Reset the environment and launch the viewer
     env.reset()
     env.visualize()
 
-    # Step randomly until interrupted
-    steps = 0
-    while steps < n_steps:
-        ts = env.step(env.action_space.sample())
-        if ts.last:
-            break
-        steps += 1
+    step_count = 0
+    es = env.step(env.action_space.sample())
+    while not es.last and step_count < n_steps:
+        es = env.step(env.action_space.sample())
+        step_count += 1
 
 
 step_bullet_kuka_env()

@@ -18,7 +18,7 @@ class ContinuousMLPQFunction(MLPModule):
         Initialize class with multiple attributes.
 
         Args:
-            env_spec (garage.envs.env_spec.EnvSpec): Environment specification.
+            env_spec (EnvSpec): Environment specification.
             nn_module (nn.Module): Neural network module in PyTorch.
         """
         self._env_spec = env_spec

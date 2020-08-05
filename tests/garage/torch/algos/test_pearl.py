@@ -3,7 +3,7 @@ import pickle
 
 import pytest
 
-from garage.envs import GarageEnv, normalize, PointEnv
+from garage.envs import GymEnv, normalize, PointEnv
 from garage.experiment import LocalRunner
 from garage.experiment.deterministic import set_seed
 from garage.experiment.task_sampler import SetTaskSampler
@@ -63,11 +63,11 @@ class TestPEARL:
 
         net_size = params['net_size']
         set_seed(params['seed'])
-        env_sampler = SetTaskSampler(lambda: GarageEnv(
+        env_sampler = SetTaskSampler(lambda: GymEnv(
             normalize(ML1.get_train_tasks('push-v1'))))
         env = env_sampler.sample(params['num_train_tasks'])
 
-        test_env_sampler = SetTaskSampler(lambda: GarageEnv(
+        test_env_sampler = SetTaskSampler(lambda: GymEnv(
             normalize(ML1.get_test_tasks('push-v1'))))
 
         augmented_env = PEARL.augment_env_spec(env[0](), params['latent_size'])

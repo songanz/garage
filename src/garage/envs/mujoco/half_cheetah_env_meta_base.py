@@ -1,6 +1,11 @@
 """Base class of HalfCheetah meta-environments."""
+import math
+
+import akro
 from gym.envs.mujoco import HalfCheetahEnv as HalfCheetahEnv_
 import numpy as np
+
+from garage import EnvSpec
 
 
 class HalfCheetahEnvMetaBase(HalfCheetahEnv_):

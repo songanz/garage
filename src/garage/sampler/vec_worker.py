@@ -154,20 +154,20 @@ class VecWorker(DefaultWorker):
         completes = [False] * len(self._envs)
         for i, action in enumerate(actions):
             if self._path_lengths[i] < self._max_episode_length:
-                ts = self._envs[i].step(action)
+                es = self._envs[i].step(action)
                 self._observations[i].append(self._prev_obs[i])
-                self._rewards[i].append(ts.reward)
-                self._actions[i].append(ts.action)
+                self._rewards[i].append(es.reward)
+                self._actions[i].append(es.action)
                 for k, v in agent_info.items():
                     self._agent_infos[i][k].append(v[i])
-                for k, v in ts.env_info.items():
+                for k, v in es.env_info.items():
                     self._env_infos[i][k].append(v)
                 self._path_lengths[i] += 1
-                self._step_types[i].append(ts.step_type)
-                self._prev_obs[i] = ts.next_observation
+                self._step_types[i].append(es.step_type)
+                self._prev_obs[i] = es.next_observation
             if self._path_lengths[i] >= self._max_episode_length or \
-                ts.last:
-                self._gather_rollout(i, ts.next_observation)
+                es.last:
+                self._gather_rollout(i, es.next_observation)
                 completes[i] = True
                 finished = True
         if finished:
