@@ -2,7 +2,7 @@ name: Garage CI
 
 env:
   GARAGE_GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  TRAVIS_COMMIT_RANGE: origin/${{ github.base_ref }}...origin/${{ github.head_ref }}
+  COMMIT_RANGE: origin/${{ github.base_ref }}...origin/${{ github.head_ref }}
   DOCKER_TAG: garage-ci-189158592
   OWNER: "rlworkgroup"
   DOCKER_CACHE_REPO: "garage-ci"
@@ -53,9 +53,10 @@ jobs:
     - name: Rename docker image
       run: docker tag docker.pkg.github.com/${OWNER}/${DOCKER_CACHE_REPO}/${DOCKER_TAG} ${DOCKER_TAG}
     - name: Check pre-commit
+      if: github.event_name == 'pull_request'
       run: |
         docker run \
-          -e TRAVIS_COMMIT_RANGE \
+          -e COMMIT_RANGE \
           --memory 7500m \
           --memory-swap 7500m \
           "${DOCKER_TAG}" scripts/travisci/check_precommit.sh
@@ -75,6 +76,7 @@ jobs:
           		|| echo 'Retrying...' && sleep 30 && continue; \
           	exit 1; \
           done"
+    - name: Run large tests
 
 
 #  delete_docker_container:
