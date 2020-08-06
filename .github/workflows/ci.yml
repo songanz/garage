@@ -53,7 +53,7 @@ jobs:
     - name: Rename docker image
       run: docker tag docker.pkg.github.com/${OWNER}/${DOCKER_CACHE_REPO}/${DOCKER_TAG} ${DOCKER_TAG}
     - name: Check pre-commit
-      if: github.event_name == 'pull_request'
+#      if: github.event_name == 'pull_request'
       run: |
         docker run \
           -e COMMIT_RANGE \
