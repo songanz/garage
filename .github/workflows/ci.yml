@@ -63,7 +63,7 @@ jobs:
     - name: Run normal tests
       run: |
         docker run \
-          -e TRAVIS_COMMIT_RANGE \
+          -e COMMIT_RANGE \
           --memory 7500m \
           --memory-swap 7500m \
           "${DOCKER_TAG}" \
@@ -77,6 +77,20 @@ jobs:
           	exit 1; \
           done"
     - name: Run large tests
+      run:
+        docker run \
+        -e COMMIT_RANGE \
+        --memory 7500m \
+        --memory-swap 7500m \
+        "${DOCKER_TAG}" \
+        /bin/bash -c \
+        [ ! -f ${MJKEY_PATH} ] || mv ${MJKEY_PATH} ${MJKEY_PATH}.bak &&
+        pytest --cov=garage --cov-report=xml -m 'large and not flaky' --durations=20 &&
+        for i in {1..5}; do \
+        bash <(curl -s https://codecov.io/bash --retry 5) -Z && break \
+        || echo 'Retrying...' && sleep 30 && continue; \
+        exit 1; \
+        done
 
 
 #  delete_docker_container:
